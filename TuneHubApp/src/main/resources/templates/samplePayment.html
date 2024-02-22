@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html xmlns:th="https://www.thymeleaf.org">
+<head>
+<meta charset="ISO-8859-1">
+<title>Payment</title>
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+</head>
+<body>
+	<div>
+
+		<h1>Why premium ?</h1>
+		<p>To become a Premium Customer</p>
+
+		<form id="payment-form">
+			<button type="submit" class="buy-button">BUY</button>
+		</form>
+
+	</div>
+	<script>
+	//here we are using the Code to Add PAY Button from RazorPay Documentation
+		$(document).ready(function() {
+			$(".buy-button").click(function(e) {
+				e.preventDefault();
+				var form = $(this).closest('form');
+
+				createOrder();
+			});
+		});
+
+		function createOrder() {
+			$.post("/createOrder")
+			.done(function(order) {
+						order = JSON.parse(order);
+						var options = {
+							"key" : "rzp_test_TBcMw8qXaYHDNm",
+							"amount" : order.amount_due.toString(),
+							"currency" : "INR",
+							"name" : "Tune Hub",
+							"description" : "Test Transaction",
+							"order_id" : order.id,
+							"handler" : function(response) {
+								verifyPayment(response.razorpay_order_id,response.razorpay_payment_id,response.razorpay_signature);
+								/*as soon as the response will come from the verifyPayment() from the Payment 
+								Controller then it will be give to verifyPayment function which is written in 
+								this html page*/  
+								/*i.e here function call is done i.e verifyPayment function is called which is
+								written inside this html page*/
+							},
+							"prefill" : {
+								"name" : "Sake Sreenath",
+								"email" : "sreenathkumar2000@.com",
+								"contact" : "9701525523"
+							},
+							"notes" : {
+								"address" : "TuneHub Office"
+							},
+							"theme" : {
+								"color" : "#F37254"
+							}
+						};
+						var rzp1 = new Razorpay(options);/*i.e here we are calling the options written in this
+																				html page i.e (var options)*/
+						rzp1.open();/*i.e here this open() method used to open the checkout-form where we have
+																	options to pay i.e upi,bank,wallets etc.*/
+					})
+				.fail(function(error) {
+				console.error("Error:", error);
+			});
+		}
+
+		function verifyPayment(orderId, paymentId, signature) {
+			$.post("/verify", {orderId : orderId,paymentId : paymentId,signature : signature})
+			.done(function(isValid) {
+				if (isValid) {
+					alert("Payment successful");
+					window.location.href = 'payment-success';/*i.e redirecting to payment-success url which is
+																				written in payment controller*/
+				} 
+				else {
+					alert("Payment failed");
+					window.location.href = 'payment-failure';/*i.e redirecting to payment-failure url which is 
+																				written in payment controller*/
+				}
+			})
+			.fail(function(error) {
+				console.error("Error:", error);
+			});
+		}
+	</script>
+</body>
+</html>
